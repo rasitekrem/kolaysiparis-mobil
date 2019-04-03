@@ -1,16 +1,51 @@
 import React, { Component } from 'react';
 import { View, Text, ImageBackground, Dimensions, Image, TextInput, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
 import { Actions } from 'react-native-router-flux';
-import Button from '../commons/Button';
+import { Button, Spinner } from '../commons';
+import axios from 'axios';
 
 const { width, height } = Dimensions.get('window');
 
-class Login extends Component{
-    constructor(props) {
-        super(props);
-        this.state = { mail: '', password: '' };
+class Login extends Component {
+    state = {
+        username: '', 
+        password: '',
+        error: '',
+        loading: false
+    }
+
+      login() {
+          const { username, password } = this.state;
+          this.setState({
+              error: '',
+              loading: true
+          });
+          if (username === '' || password === '') {
+              this.setState({ error: 'Boş Alan Olamaz', loading: false });
+              return;
+          }
+        axios.post('http://192.168.1.101:3000/api/authenticate',
+        { username, password })
+        .then(response => {
+            if (response.data.status) {
+                alert(response.data.status);
+                
+                // Cookie.set("authKey", response.data.token);
+                // let expiresIn = new Date().getTime() + +response.data.expiresIn * 60000
+                // Cookie.set("expiresIn", expiresIn);
+                // localStorage.setItem("authKey", response.data.token);
+                // localStorage.setItem("expiresIn", expiresIn);
+                // vuexContext.commit("setAuthKey", response.data.token)
+                // vuexContext.commit("setStep", response.data.step)
+            } else {
+                this.setState({ error: 'Kullanıcı adı ya da şifre hatalı!!!', loading: false });
+            }
+        })
+        .catch(err => {
+            this.setState({ error: 'Bir hata meydana geldi, bağlantınızı kontrol ediniz.', loading: false });
+        });
       }
-    renderPickerButton(text){
+    renderPickerButton(text) {
        return (
            <View>
                <View style={styles.pickerButtonStyle}>
@@ -19,26 +54,24 @@ class Login extends Component{
                 <Text style={styles.pickerTextStyle}>
                     {text}
                 </Text>
-           </View>
-        
+           </View> 
        );
     }
-    renderSection(title){
-        return (
-            <View style={styles.section}>
-                <View style={{ flex: 1, justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center'}}>
-                    <TextInput
-                        placeholder={title}
-                        style={{ marginLeft: 5, flex: 1 }}
-                        onChangeText={(text) => this.setState({ text })}
-                        value={this.state.text}
-                        keyboardType="email-address"
-                    />
-                </View>
-            </View>
-        );
-    };
     render() {
+        const { error, loading } = this.state;
+        const errorMsg = error ? (
+        <Text style={styles.errorStyle}>
+            { error }
+        </Text>
+        ) : null;
+        const loginButton = loading ? (
+            <Spinner />
+            ) : (
+                <TouchableOpacity onPress={() => this.login()}>
+                    <Button text={'Giriş Yap'} />
+                </TouchableOpacity>
+            );
+
         return (
             
             <ImageBackground source={require('../img/bg.png')} style={{ height, width }}>
@@ -50,8 +83,8 @@ class Login extends Component{
                     <TextInput
                         placeholder='Email adresiniz'
                         style={{ marginLeft: 5, flex: 1 }}
-                        onChangeText={(mail) => this.setState({ mail })}
-                        value={this.state.mail}
+                        onChangeText={(username) => this.setState({ username })}
+                        value={this.state.username}
                         keyboardType="email-address"
                     />
                 </View>
@@ -67,9 +100,8 @@ class Login extends Component{
                     />
                 </View>
             </View>
-            <TouchableOpacity >
-                <Button text={'Giriş Yap'}/>
-            </TouchableOpacity>
+            { errorMsg }
+            { loginButton }
             <TouchableOpacity onPress={() => Actions.register()}>
                 <Text style={{ marginTop: 5, color: 'white', fontSize: 15 }}>Yeni Hesap Oluşturun </Text>
             </TouchableOpacity>  
@@ -111,6 +143,17 @@ const styles = {
         width: width * 0.24, 
         textAlign: 'center', 
         marginTop: 10 
+    },
+    errorStyle: {
+        fontSize: 20,
+        color: '#a50000',
+        marginTop: 5,
+        alignSelf: 'center',
+        textAlign: 'center',
+        borderRadius: 10,
+        padding: 3,
+        width: width * 0.8,
+        backgroundColor: 'rgba(255, 255, 255,0.3)'
     }
 };
 export default Login;

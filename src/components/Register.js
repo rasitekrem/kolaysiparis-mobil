@@ -1,44 +1,88 @@
+/* eslint-disable global-require */
 import React, { Component } from 'react';
 import { View, Text, ImageBackground, Dimensions, Image, TextInput, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
 import { Actions } from 'react-native-router-flux';
-import Button from '../commons/Button';
+import axios from 'axios';
+import { Button, Spinner } from '../commons';
 
 const { width, height } = Dimensions.get('window');
 
-class Login extends Component{
-    constructor(props) {
-        super(props);
-        this.state = { mail: '', password: '', repassword: '' };
-      }
-    renderPickerButton(text){
-       return (
-           <View>
-               <View style={styles.pickerButtonStyle}>
-                    <Image source={require('../img/Add.png')} />
-                </View>
-                <Text style={styles.pickerTextStyle}>
-                    {text}
-                </Text>
-           </View>
-        
-       );
-    }
-    renderSection(title){
-        return (
-            <View style={styles.section}>
-                <View style={{ flex: 1, justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center'}}>
-                    <TextInput
-                        placeholder={title}
-                        style={{ marginLeft: 5, flex: 1 }}
-                        onChangeText={(text) => this.setState({ text })}
-                        value={this.state.text}
-                        keyboardType="email-address"
-                    />
-                </View>
-            </View>
-        );
+class Login extends Component {
+    state = { 
+        username: '', 
+        password: '', 
+        repassword: '',
+        loading: false,
+        error: '',
+        checkUser: false
     };
+    validateEmail(email) {
+        const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        return re.test(String(email).toLowerCase());
+    }
+    register() {
+        const { username, password, repassword } = this.state;
+        this.setState({
+            error: '',
+            loading: true
+        });
+        if (username === '' || password === '' || repassword === '') {
+            this.setState({ error: 'Boş Alan Olamaz', loading: false });
+            return;
+        } else if (!this.validateEmail(username)) {
+            this.setState({ error: 'Geçerli bir email adresi giriniz.', loading: false });
+            return;
+        } else if (password !== repassword) {
+            this.setState({ error: 'Parolalar Uyuşmuyor', loading: false });
+            return;
+        } else if (password.length < 6) {
+            this.setState({ error: 'Parola en az 6 karakterden oluşmalı', loading: false });
+            return;
+        }
+        axios.post('http://192.168.1.101:3000/api/checkuser', { data: { email: username } })
+            .then(check => {
+                console.log(check.data.status);
+                                    if (check.data.status === 'ok') {
+                                        axios.post('http://192.168.1.101:3000/api/register',
+                                        {
+                                            username,
+                                            password,
+                                            repassword
+                                        })
+                                        .then(response => {
+                                            if (response.data.status) {
+                                                this.setState({ error: 'Hesap Oluşturuldu', loading: false });
+                                                // Cookie.set("authKey", response.data.token);
+                                                // let expiresIn = new Date().getTime() + +response.data.expiresIn * 60000
+                                                // Cookie.set("expiresIn", expiresIn);
+                                                // localStorage.setItem("authKey", response.data.token);
+                                                // localStorage.setItem("expiresIn", expiresIn);
+                                                // vuexContext.commit("setAuthKey", response.data.token)
+                                            } else {
+                                                this.setState({ error: response.data.message, loading: false });
+                                                return;
+                                            }
+                                        });
+                                    } else {
+                                        this.setState({ error: 'Mail Adresi Kullanılıyor', loading: false });
+                                        return;
+                                    }
+            });
+    }
     render() {
+        const { error, loading } = this.state;
+        const errorMsg = error ? (
+        <Text style={styles.errorStyle}>
+            { error }
+        </Text>
+        ) : null;
+        const registerButton = loading ? (
+            <Spinner />
+            ) : (
+                <TouchableOpacity onPress={() => this.register()}>
+                    <Button text={'Kayıt Ol'} />
+                </TouchableOpacity>
+            );
         return (
             
             <ImageBackground source={require('../img/bg.png')} style={{ height, width }}>
@@ -50,8 +94,8 @@ class Login extends Component{
                     <TextInput
                         placeholder='Email adresiniz'
                         style={{ marginLeft: 5, flex: 1 }}
-                        onChangeText={(mail) => this.setState({ mail })}
-                        value={this.state.mail}
+                        onChangeText={(username) => this.setState({ username })}
+                        value={this.state.username}
                         keyboardType="email-address"
                     />
                 </View>
@@ -78,9 +122,8 @@ class Login extends Component{
                     />
                 </View>
             </View>
-            <TouchableOpacity >
-                <Button text={'Kayıt Ol'}/>
-            </TouchableOpacity>
+            { errorMsg }
+            { registerButton }
             <TouchableOpacity onPress={() => Actions.login()}>
                 <Text style={{ marginTop: 5, color: 'white', fontSize: 15 }}>Hesabınız var mı?</Text>
             </TouchableOpacity>  
