@@ -13,7 +13,10 @@
     "react-native-camera": "^2.1.0",
     "react-native-permissions": "^1.1.1",
     "react-native-qrcode-scanner": "^1.1.2",
-    "react-native-router-flux": "^4.0.6"
+    "react-native-router-flux": "^4.0.6",
+    "react-redux": "^6.0.1",
+    "redux": "^4.0.1",
+    "redux-thunk": "^2.3.0"
   },
   "devDependencies": {
     "@babel/core": "7.3.4",

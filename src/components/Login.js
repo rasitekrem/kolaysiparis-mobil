@@ -1,50 +1,28 @@
 import React, { Component } from 'react';
 import { View, Text, ImageBackground, Dimensions, Image, TextInput, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
 import { Actions } from 'react-native-router-flux';
+import { connect } from 'react-redux';
+import { emailChanged, passwordChanged, repasswordChanged, loginUser, loginFailed } from '../actions';
 import { Button, Spinner } from '../commons';
-import axios from 'axios';
 
 const { width, height } = Dimensions.get('window');
 
 class Login extends Component {
-    state = {
-        username: '', 
-        password: '',
-        error: '',
-        loading: false
-    }
+    login() {
+        const { username, password } = this.props;
 
-      login() {
-          const { username, password } = this.state;
-          this.setState({
-              error: '',
-              loading: true
-          });
-          if (username === '' || password === '') {
-              this.setState({ error: 'Boş Alan Olamaz', loading: false });
-              return;
-          }
-        axios.post('http://192.168.1.101:3000/api/authenticate',
-        { username, password })
-        .then(response => {
-            if (response.data.status) {
-                alert(response.data.status);
-                
-                // Cookie.set("authKey", response.data.token);
-                // let expiresIn = new Date().getTime() + +response.data.expiresIn * 60000
-                // Cookie.set("expiresIn", expiresIn);
-                // localStorage.setItem("authKey", response.data.token);
-                // localStorage.setItem("expiresIn", expiresIn);
-                // vuexContext.commit("setAuthKey", response.data.token)
-                // vuexContext.commit("setStep", response.data.step)
-            } else {
-                this.setState({ error: 'Kullanıcı adı ya da şifre hatalı!!!', loading: false });
-            }
-        })
-        .catch(err => {
-            this.setState({ error: 'Bir hata meydana geldi, bağlantınızı kontrol ediniz.', loading: false });
-        });
-      }
+        if (username === '' || password === '') {
+            this.props.loginFailed('Boş Alan Olamaz');
+            return;
+        }
+        this.props.loginUser(username, password);
+    }
+    onEmailChanged(username) {
+        this.props.emailChanged(username);
+    }
+    onPasswordChanged(password) {
+        this.props.passwordChanged(password);
+    }
     renderPickerButton(text) {
        return (
            <View>
@@ -58,7 +36,7 @@ class Login extends Component {
        );
     }
     render() {
-        const { error, loading } = this.state;
+        const { error, loading } = this.props;
         const errorMsg = error ? (
         <Text style={styles.errorStyle}>
             { error }
@@ -83,8 +61,8 @@ class Login extends Component {
                     <TextInput
                         placeholder='Email adresiniz'
                         style={{ marginLeft: 5, flex: 1 }}
-                        onChangeText={(username) => this.setState({ username })}
-                        value={this.state.username}
+                        onChangeText={this.onEmailChanged.bind(this)}
+                        value={this.props.username}
                         keyboardType="email-address"
                     />
                 </View>
@@ -94,8 +72,8 @@ class Login extends Component {
                     <TextInput
                         placeholder='Parolanız'
                         style={{ marginLeft: 5, flex: 1 }}
-                        onChangeText={(password) => this.setState({ password })}
-                        value={this.state.password}
+                        onChangeText={this.onPasswordChanged.bind(this)}
+                        value={this.props.password}
                         secureTextEntry
                     />
                 </View>
@@ -156,5 +134,21 @@ const styles = {
         backgroundColor: 'rgba(255, 255, 255,0.3)'
     }
 };
-export default Login;
+const mapStateToProps = state => {
+    const { username, password, loading, error } = state.auth;
+    return {
+        username,
+        password,
+        loading,
+        error
+    };
+};
+
+export default connect(mapStateToProps, { 
+    emailChanged, 
+    passwordChanged, 
+    repasswordChanged,
+    loginUser,
+    loginFailed
+})(Login);
 

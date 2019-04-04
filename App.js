@@ -1,14 +1,22 @@
-import React, {Component} from 'react';
-import { StyleSheet, View} from 'react-native';
+import React, { Component } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { Provider } from 'react-redux';
+import { createStore, applyMiddleware } from 'redux';
+import ReduxThunk from 'redux-thunk';
 import Root from './src/Root';
+import reducers from './src/reducers';
 
 type Props = {};
 export default class App extends Component<Props> {
   render() {
+    const store = createStore(reducers, {}, applyMiddleware(ReduxThunk));
     return (
-      <View style={styles.container}>
-        <Root />
-      </View>
+      <Provider store={store}>
+        <View style={styles.container}>
+          <Root />
+        </View>
+      </Provider>
+      
     );
   }
 }

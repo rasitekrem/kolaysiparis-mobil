@@ -2,75 +2,58 @@
 import React, { Component } from 'react';
 import { View, Text, ImageBackground, Dimensions, Image, TextInput, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
 import { Actions } from 'react-native-router-flux';
+import { connect } from 'react-redux';
 import axios from 'axios';
 import { Button, Spinner } from '../commons';
+import { emailChanged, passwordChanged, repasswordChanged, registerUser, registerFailed } from '../actions';
 
 const { width, height } = Dimensions.get('window');
 
-class Login extends Component {
-    state = { 
-        username: '', 
-        password: '', 
-        repassword: '',
-        loading: false,
-        error: '',
-        checkUser: false
-    };
+class Register extends Component {
+
     validateEmail(email) {
         const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
         return re.test(String(email).toLowerCase());
     }
     register() {
-        const { username, password, repassword } = this.state;
-        this.setState({
-            error: '',
-            loading: true
-        });
+        const { username, password, repassword } = this.props;
         if (username === '' || password === '' || repassword === '') {
-            this.setState({ error: 'Boş Alan Olamaz', loading: false });
+            this.props.registerFailed('Boş Alan Olamaz');
             return;
         } else if (!this.validateEmail(username)) {
-            this.setState({ error: 'Geçerli bir email adresi giriniz.', loading: false });
+            this.props.registerFailed('Geçerli bir email adresi giriniz.');
             return;
         } else if (password !== repassword) {
-            this.setState({ error: 'Parolalar Uyuşmuyor', loading: false });
+            this.props.registerFailed('Parolalar Uyuşmuyor');
             return;
         } else if (password.length < 6) {
-            this.setState({ error: 'Parola en az 6 karakterden oluşmalı', loading: false });
+            this.props.registerFailed('Parola en az 6 karakterden oluşmalı');
             return;
         }
         axios.post('http://192.168.1.101:3000/api/checkuser', { data: { email: username } })
             .then(check => {
-                console.log(check.data.status);
-                                    if (check.data.status === 'ok') {
-                                        axios.post('http://192.168.1.101:3000/api/register',
-                                        {
-                                            username,
-                                            password,
-                                            repassword
-                                        })
-                                        .then(response => {
-                                            if (response.data.status) {
-                                                this.setState({ error: 'Hesap Oluşturuldu', loading: false });
-                                                // Cookie.set("authKey", response.data.token);
-                                                // let expiresIn = new Date().getTime() + +response.data.expiresIn * 60000
-                                                // Cookie.set("expiresIn", expiresIn);
-                                                // localStorage.setItem("authKey", response.data.token);
-                                                // localStorage.setItem("expiresIn", expiresIn);
-                                                // vuexContext.commit("setAuthKey", response.data.token)
-                                            } else {
-                                                this.setState({ error: response.data.message, loading: false });
-                                                return;
-                                            }
-                                        });
-                                    } else {
-                                        this.setState({ error: 'Mail Adresi Kullanılıyor', loading: false });
-                                        return;
-                                    }
+                if (check.data.status === 'ok') {
+                    this.props.registerUser(username, password, repassword);
+                } else {
+                    this.props.registerFailed('Mail Adresi Kullanılıyor');
+                    return;
+                }
+            })
+            .catch(() => {
+                this.props.registerFailed('Bir hata meydana geldi, bağlantınızı kontrol ediniz.');
             });
     }
+    onEmailChanged(username) {
+        this.props.emailChanged(username);
+    }
+    onPasswordChanged(password) {
+        this.props.passwordChanged(password);
+    }
+    onRepasswordChanged(repassword) {
+        this.props.repasswordChanged(repassword);
+    }
     render() {
-        const { error, loading } = this.state;
+        const { error, loading } = this.props;
         const errorMsg = error ? (
         <Text style={styles.errorStyle}>
             { error }
@@ -94,8 +77,8 @@ class Login extends Component {
                     <TextInput
                         placeholder='Email adresiniz'
                         style={{ marginLeft: 5, flex: 1 }}
-                        onChangeText={(username) => this.setState({ username })}
-                        value={this.state.username}
+                        onChangeText={this.onEmailChanged.bind(this)}
+                        value={this.props.username}
                         keyboardType="email-address"
                     />
                 </View>
@@ -105,8 +88,8 @@ class Login extends Component {
                     <TextInput
                         placeholder='Parolanız'
                         style={{ marginLeft: 5, flex: 1 }}
-                        onChangeText={(password) => this.setState({ password })}
-                        value={this.state.password}
+                        onChangeText={this.onPasswordChanged.bind(this)}
+                        value={this.props.password}
                         secureTextEntry
                     />
                 </View>
@@ -116,8 +99,8 @@ class Login extends Component {
                     <TextInput
                         placeholder='Yeniden Parolanız'
                         style={{ marginLeft: 5, flex: 1 }}
-                        onChangeText={(repassword) => this.setState({ repassword })}
-                        value={this.state.repassword}
+                        onChangeText={this.onRepasswordChanged.bind(this)}
+                        value={this.props.repassword}
                         secureTextEntry
                     />
                 </View>
@@ -167,5 +150,23 @@ const styles = {
         marginTop: 10 
     }
 };
-export default Login;
+
+const mapStateToProps = state => {
+    const { username, password, repassword, loading, error } = state.auth;
+    return {
+        username,
+        password,
+        repassword,
+        loading,
+        error
+    };
+};
+
+export default connect(mapStateToProps, { 
+    emailChanged, 
+    passwordChanged, 
+    repasswordChanged,
+    registerUser,
+    registerFailed
+})(Register);
 
