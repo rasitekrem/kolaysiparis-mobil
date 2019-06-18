@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { Provider } from 'react-redux';
 import { createStore, applyMiddleware } from 'redux';
 import ReduxThunk from 'redux-thunk';
-import Root from './src/Root';
+import Router from './src/router';
 import reducers from './src/reducers';
 
 type Props = {};
@@ -13,7 +13,7 @@ export default class App extends Component<Props> {
     return (
       <Provider store={store}>
         <View style={styles.container}>
-          <Root />
+          <Router />
         </View>
       </Provider>
       

@@ -1,13 +1,19 @@
 import React, { Component } from 'react';
-import { View, Text, ImageBackground, Dimensions, Image, TextInput, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
+import { View, Text, ImageBackground, Dimensions, Image, TextInput, TouchableOpacity, KeyboardAvoidingView, ActivityIndicator } from 'react-native';
 import { Actions } from 'react-native-router-flux';
 import { connect } from 'react-redux';
-import { emailChanged, passwordChanged, repasswordChanged, loginUser, loginFailed } from '../actions';
+import { emailChanged, passwordChanged, repasswordChanged, loginUser, loginFailed, isLoggedIn } from '../actions';
 import { Button, Spinner } from '../commons';
 
 const { width, height } = Dimensions.get('window');
 
 class Login extends Component {
+    componentDidMount() {
+        if (this.props.fullLoading) {
+            this.props.isLoggedIn();
+        }
+    }
+    // eslint-disable-next-line react/sort-comp
     login() {
         const { username, password } = this.props;
 
@@ -36,7 +42,14 @@ class Login extends Component {
        );
     }
     render() {
-        const { error, loading } = this.props;
+        const { error, loading, fullLoading } = this.props;
+        if (fullLoading) {
+            return (
+                <ImageBackground source={require('../img/bg.png')} style={{ height, width }}>
+                    <ActivityIndicator style={{ flex: 1, position: 'relative' }}/>
+                </ImageBackground>
+            );
+        }
         const errorMsg = error ? (
         <Text style={styles.errorStyle}>
             { error }
@@ -135,12 +148,13 @@ const styles = {
     }
 };
 const mapStateToProps = state => {
-    const { username, password, loading, error } = state.auth;
+    const { username, password, loading, error, fullLoading } = state.auth;
     return {
         username,
         password,
         loading,
-        error
+        error,
+        fullLoading
     };
 };
 
@@ -149,6 +163,7 @@ export default connect(mapStateToProps, {
     passwordChanged, 
     repasswordChanged,
     loginUser,
-    loginFailed
+    loginFailed,
+    isLoggedIn
 })(Login);
 

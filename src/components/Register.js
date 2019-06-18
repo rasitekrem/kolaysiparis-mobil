@@ -4,7 +4,7 @@ import { View, Text, ImageBackground, Dimensions, Image, TextInput, TouchableOpa
 import { Actions } from 'react-native-router-flux';
 import { connect } from 'react-redux';
 import axios from 'axios';
-import { Button, Spinner } from '../commons';
+import { Button, Spinner, url } from '../commons';
 import { emailChanged, passwordChanged, repasswordChanged, registerUser, registerFailed } from '../actions';
 
 const { width, height } = Dimensions.get('window');
@@ -30,7 +30,7 @@ class Register extends Component {
             this.props.registerFailed('Parola en az 6 karakterden oluşmalı');
             return;
         }
-        axios.post('http://192.168.1.101:3000/api/checkuser', { data: { email: username } })
+        axios.post(`${url}/checkuser`, { data: { email: username } })
             .then(check => {
                 if (check.data.status === 'ok') {
                     this.props.registerUser(username, password, repassword);
